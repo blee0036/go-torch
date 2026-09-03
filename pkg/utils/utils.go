@@ -10,15 +10,13 @@ import (
 func TimeIt(f func() interface{}) (int64, interface{}) {
 	startAt := time.Now()
 	res := f()
-	endAt := time.Now()
-	return endAt.UnixNano() - startAt.UnixNano(), res
+	return time.Since(startAt).Nanoseconds(), res
 }
 
 func TimeItWithResult(f func() (interface{}, interface{})) (int64, interface{}, interface{}) {
 	startAt := time.Now()
 	res, err := f()
-	endAt := time.Now()
-	return endAt.UnixNano() - startAt.UnixNano(), res, err
+	return time.Since(startAt).Nanoseconds(), res, err
 }
 
 // FormatIP - trim spaces and format IP

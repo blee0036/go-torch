@@ -1,34 +1,33 @@
-# syntax=docker/dockerfile:experimental
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.13-alpine as builder
+# syntax=docker/dockerfile:1
+FROM --platform=$BUILDPLATFORM golang:1.27.1-alpine AS builder
 
-ARG VERSION
+ARG VERSION=dev
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
 
 ENV PORT=8080 \
          GIN_MODE=production
-# Convert TARGETPLATFORM to GOARCH format
-# https://github.com/tonistiigi/xx
-COPY --from=tonistiigi/xx:golang / /
 
-ARG TARGETPLATFORM
+RUN apk add --no-cache git
 
-RUN apk --update --no-cache add \
-    build-base \
-    gcc \
-    git \
-  && rm -rf /tmp/* /var/cache/apk/*
-
-ADD . /src
+COPY . /src
 
 WORKDIR /src
 
-ENV GO111MODULE=on
+RUN case "$TARGETVARIANT" in \
+      v6) export GOARM=6 ;; \
+      v7) export GOARM=7 ;; \
+    esac && \
+    CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
+    go build -trimpath -ldflags "-w -s -X main.version=$VERSION" -o /torch ./cmd
 
-RUN  go env && env $(cat /tmp/.env | xargs) go build -ldflags "-w -s -X 'main.version=${VERSION}'"  -v -o torch cmd/main.go
-
-FROM alpine:latest
+FROM alpine:3.23
 
 WORKDIR /bin/
 
-COPY --from=builder /src/torch ./torch
+COPY --from=builder /torch ./torch
+
+USER 65532:65532
 
 ENTRYPOINT ["/bin/torch"]

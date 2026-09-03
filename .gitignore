@@ -12,3 +12,8 @@
 *.out
 vendor/
 dist/
+
+# Local Go toolchain, module, and build caches
+.gopath/
+.gomodcache/
+.gocache/

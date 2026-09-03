@@ -1,6 +1,7 @@
 package ping
 
 import (
+	"sync"
 	"time"
 )
 
@@ -8,7 +9,12 @@ import (
 type Ping struct {
 	target *Target
 	done   chan struct{}
-	result *Result
+	stop   chan struct{}
+
+	mu        sync.RWMutex
+	startOnce sync.Once
+	stopOnce  sync.Once
+	result    *Result
 }
 
 // Target data struct
